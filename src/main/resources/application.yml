@@ -6,4 +6,8 @@ spring:
     name: report-service
   data:
     mongodb:
-      uri: mongodb://localhost:27017/crash_reports 
+      uri: mongodb://localhost:27017/crash_reports
+      auto-index-creation: true
+
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
