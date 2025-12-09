@@ -1,4 +1,4 @@
-package main.java.io.github.mrlevi1112.report_service.model;
+package io.github.mrlevi1112.report_service.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
