@@ -30,4 +30,22 @@ public class Report {
     private String status;
     
     private Double estimatedCost;
+    
+    // Damage Assessment fields
+    private String imageId;
+    private List<DamageArea> damageAreas;
+    private Double totalCost;
+    private Boolean totalLoss;
+    private LocalDateTime assessmentDate;
+    
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class DamageArea {
+        private String area;
+        private Integer severity;
+        private Double cost;
+        private String description;
+    }
 }
