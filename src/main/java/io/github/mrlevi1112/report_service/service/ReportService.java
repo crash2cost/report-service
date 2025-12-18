@@ -30,4 +30,24 @@ public class ReportService {
     public List<Report> getUserReports(String username) {
         return reportRepository.findByUsername(username);
     }
+
+    public Report createDamageAssessmentReport(Report report) {
+        report.setEventDate(LocalDateTime.now());
+        report.setAssessmentDate(LocalDateTime.now());
+        report.setStatus("ASSESSED");
+        return reportRepository.save(report);
+    }
+
+    public List<Report> getUserDamageReports(String username) {
+        return reportRepository.findByUsername(username);
+    }
+
+    public void deleteReport(String reportId) {
+        reportRepository.deleteById(reportId);
+    }
+
+    public void deleteAllUserReports(String username) {
+        List<Report> reports = reportRepository.findByUsername(username);
+        reportRepository.deleteAll(reports);
+    }
 }
