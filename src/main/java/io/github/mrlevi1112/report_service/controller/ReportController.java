@@ -37,4 +37,42 @@ public class ReportController {
     public ResponseEntity<List<Report>> getUserReports(@PathVariable String username) {
         return ResponseEntity.ok(reportService.getUserReports(username));
     }
+
+    @PostMapping("/damage-assessment")
+    public ResponseEntity<Report> createDamageAssessmentReport(
+            @RequestHeader("Authorization") String token,
+            @RequestBody Report report
+    ) {
+        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
+        String username = jwtUtil.extractUsername(actualToken);
+        report.setUsername(username);
+        return ResponseEntity.ok(reportService.createDamageAssessmentReport(report));
+    }
+
+    @GetMapping("/damage-assessments")
+    public ResponseEntity<List<Report>> getUserDamageReports(
+            @RequestHeader("Authorization") String token
+    ) {
+        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
+        String username = jwtUtil.extractUsername(actualToken);
+        return ResponseEntity.ok(reportService.getUserDamageReports(username));
+    }
+
+    @DeleteMapping("/{reportId}")
+    public ResponseEntity<Void> deleteReport(
+            @PathVariable String reportId
+    ) {
+        reportService.deleteReport(reportId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/all")
+    public ResponseEntity<Void> deleteAllReports(
+            @RequestHeader("Authorization") String token
+    ) {
+        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
+        String username = jwtUtil.extractUsername(actualToken);
+        reportService.deleteAllUserReports(username);
+        return ResponseEntity.noContent().build();
+    }
 }
