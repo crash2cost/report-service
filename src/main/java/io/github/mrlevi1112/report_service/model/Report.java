@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -30,10 +31,12 @@ public class Report {
     private String status;
     
     private Double estimatedCost;
-    
+
     // Damage Assessment fields
     private String imageId;
     private List<DamageArea> damageAreas;
+    @DBRef
+    private List<DamageRegion> damageRegions;
     private Double totalCost;
     private Boolean totalLoss;
     private LocalDateTime assessmentDate;
