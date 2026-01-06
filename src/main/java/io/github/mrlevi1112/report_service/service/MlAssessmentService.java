@@ -1,7 +1,6 @@
 package io.github.mrlevi1112.report_service.service;
 
 import io.github.mrlevi1112.report_service.dto.MlAssessmentRequest;
-import io.github.mrlevi1112.report_service.dto.MlAssessmentResponse;
 import io.github.mrlevi1112.report_service.dto.PythonAssessmentResponse;
 import io.github.mrlevi1112.report_service.model.Report;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +28,7 @@ public class MlAssessmentService {
     private static final String DEFAULT_CAR_SEGMENT = "Family";
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ReportService reportService;
 
     @Value("${auth.service.url:http://localhost:8001}")
     private String authServiceUrl;
@@ -36,7 +36,7 @@ public class MlAssessmentService {
     @Value("${ml.service.url:http://localhost:8004}")
     private String mlServiceUrl;
 
-    public MlAssessmentResponse assessDamage(String authHeader, MlAssessmentRequest request) {
+    public Report assessDamage(String authHeader, MlAssessmentRequest request, String username) {
         if (request == null || request.getImageId() == null || request.getImageId().isBlank()) {
             throw new IllegalArgumentException("imageId is required");
         }
@@ -64,13 +64,17 @@ public class MlAssessmentService {
 
         boolean totalLoss = pythonResponse.getSeverity() != null && pythonResponse.getSeverity() >= 5;
 
-        return MlAssessmentResponse.builder()
+        Report report = Report.builder()
+                .username(username)
                 .imageId(request.getImageId())
                 .damageAreas(List.of(damageArea))
                 .totalCost(estimatedCost)
                 .totalLoss(totalLoss)
                 .assessmentDate(LocalDateTime.now())
+                .status("ASSESSED")
                 .build();
+
+        return reportService.createDamageAssessmentReport(report);
     }
 
     private ResponseEntity<byte[]> fetchImage(String authHeader, String imageId) {

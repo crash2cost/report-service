@@ -3,7 +3,6 @@ package io.github.mrlevi1112.report_service.controller;
 import io.github.mrlevi1112.report_service.common.Constants;
 import io.github.mrlevi1112.report_service.dto.CreateReportDTO;
 import io.github.mrlevi1112.report_service.dto.MlAssessmentRequest;
-import io.github.mrlevi1112.report_service.dto.MlAssessmentResponse;
 import io.github.mrlevi1112.report_service.model.Report;
 import io.github.mrlevi1112.report_service.service.MlAssessmentService;
 import io.github.mrlevi1112.report_service.service.ReportService;
@@ -54,11 +53,13 @@ public class ReportController {
     }
 
     @PostMapping("/ai-assessments")
-    public ResponseEntity<MlAssessmentResponse> assessDamage(
+    public ResponseEntity<Report> assessDamage(
             @RequestHeader("Authorization") String token,
             @RequestBody MlAssessmentRequest request
     ) {
-        return ResponseEntity.ok(mlAssessmentService.assessDamage(token, request));
+        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
+        String username = jwtUtil.extractUsername(actualToken);
+        return ResponseEntity.ok(mlAssessmentService.assessDamage(token, request, username));
     }
 
     @GetMapping("/damage-assessments")
