@@ -2,7 +2,10 @@ package io.github.mrlevi1112.report_service.controller;
 
 import io.github.mrlevi1112.report_service.common.Constants;
 import io.github.mrlevi1112.report_service.dto.CreateReportDTO;
+import io.github.mrlevi1112.report_service.dto.MlAssessmentRequest;
+import io.github.mrlevi1112.report_service.dto.MlAssessmentResponse;
 import io.github.mrlevi1112.report_service.model.Report;
+import io.github.mrlevi1112.report_service.service.MlAssessmentService;
 import io.github.mrlevi1112.report_service.service.ReportService;
 import io.github.mrlevi1112.report_service.util.JwtUtil; 
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService reportService;
+    private final MlAssessmentService mlAssessmentService;
     private final JwtUtil jwtUtil; 
 
     @PostMapping
@@ -47,6 +51,14 @@ public class ReportController {
         String username = jwtUtil.extractUsername(actualToken);
         report.setUsername(username);
         return ResponseEntity.ok(reportService.createDamageAssessmentReport(report));
+    }
+
+    @PostMapping("/ai-assessments")
+    public ResponseEntity<MlAssessmentResponse> assessDamage(
+            @RequestHeader("Authorization") String token,
+            @RequestBody MlAssessmentRequest request
+    ) {
+        return ResponseEntity.ok(mlAssessmentService.assessDamage(token, request));
     }
 
     @GetMapping("/damage-assessments")
