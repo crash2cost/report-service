@@ -55,6 +55,12 @@ public class ReportService {
     public List<Report> getUserDamageReports(String username) {
         return reportRepository.findByUsername(username);
     }
+    
+    public List<Report> getAllDamageReports() {
+        return reportRepository.findAll().stream()
+                .filter(report -> "ASSESSED".equals(report.getStatus()))
+                .toList();
+    }
 
     public void deleteReport(String reportId) {
         damageRegionRepository.deleteByReportId(reportId);
