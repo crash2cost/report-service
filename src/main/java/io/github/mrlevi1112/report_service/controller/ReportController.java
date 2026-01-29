@@ -8,8 +8,10 @@ import io.github.mrlevi1112.report_service.service.MlAssessmentService;
 import io.github.mrlevi1112.report_service.service.ReportService;
 import io.github.mrlevi1112.report_service.util.JwtUtil; 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -69,6 +71,18 @@ public class ReportController {
         String actualToken = token.replace(Constants.BEARER_PREFIX, "");
         String username = jwtUtil.extractUsername(actualToken);
         return ResponseEntity.ok(reportService.getUserDamageReports(username));
+    }
+    
+    @GetMapping("/damage-assessments/all")
+    public ResponseEntity<List<Report>> getAllDamageReports(
+            @RequestHeader("Authorization") String token
+    ) {
+        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
+        String role = jwtUtil.extractRole(actualToken);
+        if (role == null || !"ADMIN".equalsIgnoreCase(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
+        }
+        return ResponseEntity.ok(reportService.getAllDamageReports());
     }
 
     @DeleteMapping("/{reportId}")
