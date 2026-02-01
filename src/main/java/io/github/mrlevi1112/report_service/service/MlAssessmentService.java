@@ -1,5 +1,6 @@
 package io.github.mrlevi1112.report_service.service;
 
+import io.github.mrlevi1112.report_service.common.Constants;
 import io.github.mrlevi1112.report_service.dto.MlAssessmentRequest;
 import io.github.mrlevi1112.report_service.dto.PythonAssessmentResponse;
 import io.github.mrlevi1112.report_service.model.Report;
@@ -24,9 +25,6 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class MlAssessmentService {
-    private static final int DEFAULT_SEVERITY = 3;
-    private static final String DEFAULT_CAR_SEGMENT = "Family";
-
     private final RestTemplate restTemplate = new RestTemplate();
     private final ReportService reportService;
 
@@ -41,8 +39,8 @@ public class MlAssessmentService {
             throw new IllegalArgumentException("imageId is required");
         }
 
-        int severity = Optional.ofNullable(request.getSeverity()).orElse(DEFAULT_SEVERITY);
-        String carSegment = Optional.ofNullable(request.getCarSegment()).orElse(DEFAULT_CAR_SEGMENT);
+        int severity = Optional.ofNullable(request.getSeverity()).orElse(Constants.DamageAssessment.DEFAULT_SEVERITY);
+        String carSegment = Optional.ofNullable(request.getCarSegment()).orElse(Constants.DamageAssessment.DEFAULT_CAR_SEGMENT);
 
         ResponseEntity<byte[]> imageResponse = fetchImage(authHeader, request.getImageId());
         PythonAssessmentResponse pythonResponse = callMlService(
@@ -62,7 +60,8 @@ public class MlAssessmentService {
                 .description("Detected " + pythonResponse.getDamageType())
                 .build();
 
-        boolean totalLoss = pythonResponse.getSeverity() != null && pythonResponse.getSeverity() >= 5;
+        boolean totalLoss = pythonResponse.getSeverity() != null
+                && pythonResponse.getSeverity() >= Constants.DamageAssessment.TOTAL_LOSS_SEVERITY_THRESHOLD;
 
         Report report = Report.builder()
                 .username(username)
@@ -71,7 +70,7 @@ public class MlAssessmentService {
                 .totalCost(estimatedCost)
                 .totalLoss(totalLoss)
                 .assessmentDate(LocalDateTime.now())
-                .status("ASSESSED")
+                .status(Constants.STATUS_ASSESSED)
                 .build();
 
         return reportService.createDamageAssessmentReport(report);
@@ -95,7 +94,7 @@ public class MlAssessmentService {
             throw new IllegalStateException("Empty image content");
         }
 
-        String filename = "image";
+        String filename = Constants.MlApi.DEFAULT_FILENAME;
         ContentDisposition contentDisposition = imageResponse.getHeaders().getContentDisposition();
         if (contentDisposition != null && contentDisposition.getFilename() != null) {
             filename = contentDisposition.getFilename();
@@ -119,16 +118,16 @@ public class MlAssessmentService {
         HttpEntity<ByteArrayResource> fileEntity = new HttpEntity<>(resource, fileHeaders);
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", fileEntity);
-        body.add("severity", String.valueOf(severity));
-        body.add("carSegment", carSegment);
+        body.add(Constants.MlApi.FIELD_FILE, fileEntity);
+        body.add(Constants.MlApi.FIELD_SEVERITY, String.valueOf(severity));
+        body.add(Constants.MlApi.FIELD_CAR_SEGMENT, carSegment);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
 
         ResponseEntity<PythonAssessmentResponse> response = restTemplate.postForEntity(
-                mlServiceUrl + "/assess",
+                mlServiceUrl + Constants.MlApi.ENDPOINT_ASSESS,
                 request,
                 PythonAssessmentResponse.class
         );
