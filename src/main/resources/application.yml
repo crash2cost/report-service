@@ -4,6 +4,17 @@ server:
 spring:
   application:
     name: report-service
+
+logging:
+  file:
+    name: logs/report-service.log
+    path: logs
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    io.github.mrlevi1112: DEBUG
   data:
     mongodb:
       uri: mongodb://localhost:27017/crash_reports

@@ -33,8 +33,13 @@ build/
 .vscode/
 
 ### Logs ###
+logs/
 *.log
+*.log.*
+report-service.log
 
-### environment files ###
+### Environment Variables ###
 .env
-*.env.example
+.env.local
+.env.*.local
+.env.example
