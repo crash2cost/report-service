@@ -53,7 +53,9 @@ public class ReportService {
     }
 
     public List<Report> getUserDamageReports(String username) {
-        return reportRepository.findByUsername(username);
+        return reportRepository.findByUsername(username).stream()
+                .filter(report -> "ASSESSED".equals(report.getStatus()) && report.getImageId() != null)
+                .toList();
     }
     
     public List<Report> getAllDamageReports() {
