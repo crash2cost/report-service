@@ -60,7 +60,7 @@ public class ReportService {
     
     public List<Report> getAllDamageReports() {
         return reportRepository.findAll().stream()
-                .filter(report -> "ASSESSED".equals(report.getStatus()))
+                .filter(report -> "ASSESSED".equals(report.getStatus()) && report.getImageId() != null)
                 .toList();
     }
 
