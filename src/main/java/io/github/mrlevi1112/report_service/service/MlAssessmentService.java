@@ -99,7 +99,7 @@ public class MlAssessmentService {
         if (contentDisposition != null && contentDisposition.getFilename() != null) {
             filename = contentDisposition.getFilename();
         }
-        final String finalFilename = filename; // Make effectively final for inner class
+        final String finalFilename = filename;
 
         MediaType contentType = imageResponse.getHeaders().getContentType();
         if (contentType == null) {

@@ -10,11 +10,8 @@ public class Constants {
     public static class DamageAssessment {
         private DamageAssessment() {}
 
-        // Severity ranges from 1 (minor) to 10 (catastrophic)
         public static final int DEFAULT_SEVERITY = 3;
-        // Vehicles with severity >= 5 are declared total loss
         public static final int TOTAL_LOSS_SEVERITY_THRESHOLD = 5;
-        // Default car segment when not specified by user
         public static final String DEFAULT_CAR_SEGMENT = "Family";
     }
 

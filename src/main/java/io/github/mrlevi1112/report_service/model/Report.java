@@ -32,7 +32,6 @@ public class Report {
     
     private Double estimatedCost;
 
-    // Damage Assessment fields
     private String imageId;
     private List<DamageArea> damageAreas;
     @DBRef
