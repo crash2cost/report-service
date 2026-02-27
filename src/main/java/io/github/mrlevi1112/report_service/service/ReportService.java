@@ -64,6 +64,10 @@ public class ReportService {
                 .toList();
     }
 
+    public Report getReportById(String reportId) {
+        return reportRepository.findById(reportId).orElse(null);
+    }
+
     public void deleteReport(String reportId) {
         damageRegionRepository.deleteByReportId(reportId);
         reportRepository.deleteById(reportId);

@@ -38,6 +38,9 @@ public class MlAssessmentService {
         if (request == null || request.getImageId() == null || request.getImageId().isBlank()) {
             throw new IllegalArgumentException("imageId is required");
         }
+        if (!request.getImageId().matches("^[a-fA-F0-9]{24}$")) {
+            throw new IllegalArgumentException("Invalid imageId format");
+        }
 
         int severity = Optional.ofNullable(request.getSeverity()).orElse(Constants.DamageAssessment.DEFAULT_SEVERITY);
         String carSegment = Optional.ofNullable(request.getCarSegment()).orElse(Constants.DamageAssessment.DEFAULT_CAR_SEGMENT);
@@ -97,7 +100,13 @@ public class MlAssessmentService {
         String filename = Constants.MlApi.DEFAULT_FILENAME;
         ContentDisposition contentDisposition = imageResponse.getHeaders().getContentDisposition();
         if (contentDisposition != null && contentDisposition.getFilename() != null) {
-            filename = contentDisposition.getFilename();
+            String rawFilename = contentDisposition.getFilename()
+                    .replace("..", "")
+                    .replace("/", "")
+                    .replace("\\", "");
+            if (!rawFilename.isBlank()) {
+                filename = rawFilename;
+            }
         }
         final String finalFilename = filename;
 

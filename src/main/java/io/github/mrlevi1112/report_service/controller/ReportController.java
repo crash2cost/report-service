@@ -39,7 +39,15 @@ public class ReportController {
     }
     
     @GetMapping("/{username}")
-    public ResponseEntity<List<Report>> getUserReports(@PathVariable String username) {
+    public ResponseEntity<List<Report>> getUserReports(
+            @RequestHeader("Authorization") String token,
+            @PathVariable String username
+    ) {
+        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
+        String tokenUsername = jwtUtil.extractUsername(actualToken);
+        if (!username.equals(tokenUsername)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
         return ResponseEntity.ok(reportService.getUserReports(username));
     }
 
@@ -87,8 +95,18 @@ public class ReportController {
 
     @DeleteMapping("/{reportId}")
     public ResponseEntity<Void> deleteReport(
+            @RequestHeader("Authorization") String token,
             @PathVariable String reportId
     ) {
+        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
+        String username = jwtUtil.extractUsername(actualToken);
+        Report report = reportService.getReportById(reportId);
+        if (report == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Report not found");
+        }
+        if (!username.equals(report.getUsername())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
         reportService.deleteReport(reportId);
         return ResponseEntity.noContent().build();
     }
