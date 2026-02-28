@@ -1,15 +1,20 @@
 package io.github.mrlevi1112.report_service.controller;
 
-import io.github.mrlevi1112.report_service.common.Constants;
 import io.github.mrlevi1112.report_service.dto.CreateReportDTO;
+import io.github.mrlevi1112.report_service.dto.DamageAssessmentReportDTO;
 import io.github.mrlevi1112.report_service.dto.MlAssessmentRequest;
 import io.github.mrlevi1112.report_service.model.Report;
 import io.github.mrlevi1112.report_service.service.MlAssessmentService;
 import io.github.mrlevi1112.report_service.service.ReportService;
-import io.github.mrlevi1112.report_service.util.JwtUtil; 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,83 +27,77 @@ public class ReportController {
 
     private final ReportService reportService;
     private final MlAssessmentService mlAssessmentService;
-    private final JwtUtil jwtUtil; 
 
     @PostMapping
     public ResponseEntity<Report> createReport(
-            @RequestHeader("Authorization") String token, 
-            @RequestBody CreateReportDTO dto
+            @AuthenticationPrincipal String username,
+            @Valid @RequestBody CreateReportDTO dto
     ) {
-        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
-        
-        String username = jwtUtil.extractUsername(actualToken);
-        
         dto.setUsername(username);
-
         return ResponseEntity.ok(reportService.createReport(dto));
     }
-    
+
     @GetMapping("/{username}")
-    public ResponseEntity<List<Report>> getUserReports(@PathVariable String username) {
+    public ResponseEntity<List<Report>> getUserReports(
+            @AuthenticationPrincipal String authenticatedUsername,
+            @PathVariable String username
+    ) {
+        if (!authenticatedUsername.equals(username)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
         return ResponseEntity.ok(reportService.getUserReports(username));
     }
 
     @PostMapping("/damage-assessment")
     public ResponseEntity<Report> createDamageAssessmentReport(
-            @RequestHeader("Authorization") String token,
-            @RequestBody Report report
+            @AuthenticationPrincipal String username,
+            @Valid @RequestBody DamageAssessmentReportDTO dto
     ) {
-        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
-        String username = jwtUtil.extractUsername(actualToken);
-        report.setUsername(username);
-        return ResponseEntity.ok(reportService.createDamageAssessmentReport(report));
+        return ResponseEntity.ok(reportService.createDamageAssessmentReport(dto, username));
     }
 
     @PostMapping("/ai-assessments")
     public ResponseEntity<Report> assessDamage(
             @RequestHeader("Authorization") String token,
-            @RequestBody MlAssessmentRequest request
+            @AuthenticationPrincipal String username,
+            @Valid @RequestBody MlAssessmentRequest request
     ) {
-        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
-        String username = jwtUtil.extractUsername(actualToken);
         return ResponseEntity.ok(mlAssessmentService.assessDamage(token, request, username));
     }
 
     @GetMapping("/damage-assessments")
-    public ResponseEntity<List<Report>> getUserDamageReports(
-            @RequestHeader("Authorization") String token
+    public ResponseEntity<Page<Report>> getUserDamageReports(
+            @AuthenticationPrincipal String username,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
-        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
-        String username = jwtUtil.extractUsername(actualToken);
-        return ResponseEntity.ok(reportService.getUserDamageReports(username));
+        Pageable pageable = PageRequest.of(page, Math.min(size, 100));
+        return ResponseEntity.ok(reportService.getUserDamageReports(username, pageable));
     }
-    
+
     @GetMapping("/damage-assessments/all")
-    public ResponseEntity<List<Report>> getAllDamageReports(
-            @RequestHeader("Authorization") String token
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<Report>> getAllDamageReports(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
-        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
-        String role = jwtUtil.extractRole(actualToken);
-        if (role == null || !"ADMIN".equalsIgnoreCase(role)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin access required");
-        }
-        return ResponseEntity.ok(reportService.getAllDamageReports());
+        Pageable pageable = PageRequest.of(page, Math.min(size, 100));
+        return ResponseEntity.ok(reportService.getAllDamageReports(pageable));
     }
 
     @DeleteMapping("/{reportId}")
     public ResponseEntity<Void> deleteReport(
+            @AuthenticationPrincipal String username,
             @PathVariable String reportId
     ) {
-        reportService.deleteReport(reportId);
+        reportService.deleteReport(reportId, username);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/all")
     public ResponseEntity<Void> deleteAllReports(
-            @RequestHeader("Authorization") String token
+            @AuthenticationPrincipal String username
     ) {
-        String actualToken = token.replace(Constants.BEARER_PREFIX, "");
-        String username = jwtUtil.extractUsername(actualToken);
         reportService.deleteAllUserReports(username);
         return ResponseEntity.noContent().build();
     }

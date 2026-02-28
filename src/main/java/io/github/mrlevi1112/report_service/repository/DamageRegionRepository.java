@@ -5,4 +5,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface DamageRegionRepository extends MongoRepository<DamageRegion, String> {
     void deleteByReportId(String reportId);
+
+    void deleteByReportIdIn(java.util.List<String> reportIds);
 }

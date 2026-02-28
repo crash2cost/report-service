@@ -1,12 +1,20 @@
 package io.github.mrlevi1112.report_service.service;
 
+import io.github.mrlevi1112.report_service.common.ReportStatus;
 import io.github.mrlevi1112.report_service.dto.CreateReportDTO;
+import io.github.mrlevi1112.report_service.dto.DamageAssessmentReportDTO;
 import io.github.mrlevi1112.report_service.model.DamageRegion;
 import io.github.mrlevi1112.report_service.model.Report;
 import io.github.mrlevi1112.report_service.repository.DamageRegionRepository;
 import io.github.mrlevi1112.report_service.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,8 +31,8 @@ public class ReportService {
                 .username(dto.getUsername())
                 .description(dto.getDescription())
                 .imageUrls(dto.getImageUrls())
-                .eventDate(LocalDateTime.now()) 
-                .status("RECEIVED") 
+                .eventDate(LocalDateTime.now())
+                .status(ReportStatus.RECEIVED)
                 .build();
 
         return reportRepository.save(report);
@@ -34,46 +42,83 @@ public class ReportService {
         return reportRepository.findByUsername(username);
     }
 
-    public Report createDamageAssessmentReport(Report report) {
-        List<DamageRegion> damageRegions = report.getDamageRegions();
-        report.setDamageRegions(null);
-        report.setEventDate(LocalDateTime.now());
-        report.setAssessmentDate(LocalDateTime.now());
-        report.setStatus("ASSESSED");
+    @Transactional
+    public Report createDamageAssessmentReport(DamageAssessmentReportDTO dto, String username) {
+        Report report = Report.builder()
+                .username(username)
+                .imageId(dto.getImageId())
+                .totalCost(dto.getTotalCost())
+                .totalLoss(dto.getTotalLoss())
+                .eventDate(LocalDateTime.now())
+                .assessmentDate(LocalDateTime.now())
+                .status(ReportStatus.ASSESSED)
+                .build();
+
+        if (dto.getDamageAreas() != null) {
+            report.setDamageAreas(dto.getDamageAreas().stream()
+                    .map(da -> Report.DamageArea.builder()
+                            .area(da.getArea())
+                            .severity(da.getSeverity())
+                            .cost(da.getCost())
+                            .description(da.getDescription())
+                            .build())
+                    .toList());
+        }
+
         Report savedReport = reportRepository.save(report);
-        if (damageRegions != null && !damageRegions.isEmpty()) {
-            for (DamageRegion region : damageRegions) {
-                region.setReportId(savedReport.getId());
-            }
-            damageRegions = damageRegionRepository.saveAll(damageRegions);
-            savedReport.setDamageRegions(damageRegions);
+
+        if (dto.getDamageRegions() != null && !dto.getDamageRegions().isEmpty()) {
+            List<DamageRegion> regions = dto.getDamageRegions().stream()
+                    .map(dr -> DamageRegion.builder()
+                            .reportId(savedReport.getId())
+                            .part(dr.getPart())
+                            .severity(dr.getSeverity())
+                            .confidence(dr.getConfidence())
+                            .bbox(dr.getBbox() != null ? DamageRegion.BoundingBox.builder()
+                                    .x(dr.getBbox().getX())
+                                    .y(dr.getBbox().getY())
+                                    .width(dr.getBbox().getWidth())
+                                    .height(dr.getBbox().getHeight())
+                                    .build() : null)
+                            .build())
+                    .toList();
+            List<DamageRegion> savedRegions = damageRegionRepository.saveAll(regions);
+            savedReport.setDamageRegions(savedRegions);
             savedReport = reportRepository.save(savedReport);
         }
+
         return savedReport;
     }
 
-    public List<Report> getUserDamageReports(String username) {
-        return reportRepository.findByUsername(username).stream()
-                .filter(report -> "ASSESSED".equals(report.getStatus()) && report.getImageId() != null)
-                .toList();
-    }
-    
-    public List<Report> getAllDamageReports() {
-        return reportRepository.findAll().stream()
-                .filter(report -> "ASSESSED".equals(report.getStatus()) && report.getImageId() != null)
-                .toList();
+    @Transactional
+    Report saveDamageAssessmentReport(Report report) {
+        return reportRepository.save(report);
     }
 
-    public void deleteReport(String reportId) {
+    public Page<Report> getUserDamageReports(String username, Pageable pageable) {
+        return reportRepository.findByUsernameAndStatusAndImageIdNotNull(username, ReportStatus.ASSESSED, pageable);
+    }
+
+    public Page<Report> getAllDamageReports(Pageable pageable) {
+        return reportRepository.findByStatusAndImageIdNotNull(ReportStatus.ASSESSED, pageable);
+    }
+
+    @Transactional
+    public void deleteReport(String reportId, String username) {
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Report not found"));
+        if (!report.getUsername().equals(username)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
         damageRegionRepository.deleteByReportId(reportId);
         reportRepository.deleteById(reportId);
     }
 
+    @Transactional
     public void deleteAllUserReports(String username) {
         List<Report> reports = reportRepository.findByUsername(username);
-        for (Report report : reports) {
-            damageRegionRepository.deleteByReportId(report.getId());
-        }
+        List<String> reportIds = reports.stream().map(Report::getId).toList();
+        damageRegionRepository.deleteByReportIdIn(reportIds);
         reportRepository.deleteAll(reports);
     }
 }

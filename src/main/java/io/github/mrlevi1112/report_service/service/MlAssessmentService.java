@@ -1,6 +1,7 @@
 package io.github.mrlevi1112.report_service.service;
 
 import io.github.mrlevi1112.report_service.common.Constants;
+import io.github.mrlevi1112.report_service.common.ReportStatus;
 import io.github.mrlevi1112.report_service.dto.MlAssessmentRequest;
 import io.github.mrlevi1112.report_service.dto.PythonAssessmentResponse;
 import io.github.mrlevi1112.report_service.model.Report;
@@ -25,10 +26,10 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class MlAssessmentService {
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ReportService reportService;
 
-    @Value("${auth.service.url:http://localhost:8001}")
+    @Value("${auth.service.url:http://localhost:8002}")
     private String authServiceUrl;
 
     @Value("${ml.service.url:http://localhost:8004}")
@@ -69,11 +70,12 @@ public class MlAssessmentService {
                 .damageAreas(List.of(damageArea))
                 .totalCost(estimatedCost)
                 .totalLoss(totalLoss)
+                .eventDate(LocalDateTime.now())
                 .assessmentDate(LocalDateTime.now())
-                .status(Constants.STATUS_ASSESSED)
+                .status(ReportStatus.ASSESSED)
                 .build();
 
-        return reportService.createDamageAssessmentReport(report);
+        return reportService.saveDamageAssessmentReport(report);
     }
 
     private ResponseEntity<byte[]> fetchImage(String authHeader, String imageId) {

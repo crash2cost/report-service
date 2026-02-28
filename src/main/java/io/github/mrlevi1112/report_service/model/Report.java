@@ -4,7 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import io.github.mrlevi1112.report_service.common.ReportStatus;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -21,14 +23,15 @@ public class Report {
     @Id
     private String id; 
 
-    private String username; 
+    @Indexed
+    private String username;
     
     private LocalDateTime eventDate;
     private String description;
     
     private List<String> imageUrls;
     
-    private String status;
+    private ReportStatus status;
     
     private Double estimatedCost;
 
