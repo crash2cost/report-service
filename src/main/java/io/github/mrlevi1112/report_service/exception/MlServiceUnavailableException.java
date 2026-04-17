@@ -1,0 +1,11 @@
+package main.java.io.github.mrlevi1112.report_service.exception;
+
+public class MlServiceUnavailableException extends RuntimeException {
+    public MlServiceUnavailableException(String message) {
+        super(message);
+    }
+
+    public MlServiceUnavailableException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}

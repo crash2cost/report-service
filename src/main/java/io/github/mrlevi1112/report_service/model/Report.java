@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import main.java.io.github.mrlevi1112.report_service.common.AssessmentSource;
 import io.github.mrlevi1112.report_service.common.ReportStatus;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -42,6 +43,8 @@ public class Report {
     private Double totalCost;
     private Boolean totalLoss;
     private LocalDateTime assessmentDate;
+    private AssessmentSource assessmentSource;
+    private String fallbackReason;
     
     @Data
     @AllArgsConstructor
