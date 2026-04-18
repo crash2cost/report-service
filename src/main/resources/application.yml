@@ -6,7 +6,7 @@ spring:
     name: report-service
   data:
     mongodb:
-      uri: mongodb://localhost:27017/crash_reports
+      uri: mongodb://localhost:27017/crash2cost
       auto-index-creation: true
 
 logging:
@@ -21,7 +21,7 @@ logging:
     io.github.mrlevi1112: DEBUG
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:change_me_in_production_but_use_env_var}
 
 auth:
   service:
@@ -30,3 +30,9 @@ auth:
 ml:
   service:
     url: ${ML_SERVICE_URL:http://localhost:8004}
+
+cors:
+  allowed-origins: http://localhost:5173
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
