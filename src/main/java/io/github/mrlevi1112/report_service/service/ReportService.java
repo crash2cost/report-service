@@ -93,7 +93,7 @@ public class ReportService {
     }
 
     @Transactional
-    Report saveDamageAssessmentReport(Report report) {
+    public Report saveDamageAssessmentReport(Report report) {
         return reportRepository.save(report);
     }
 
