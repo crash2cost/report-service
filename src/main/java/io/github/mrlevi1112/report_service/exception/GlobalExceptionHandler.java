@@ -1,4 +1,4 @@
-package main.java.io.github.mrlevi1112.report_service.exception;
+package io.github.mrlevi1112.report_service.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
