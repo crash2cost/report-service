@@ -1,7 +1,7 @@
 package io.github.mrlevi1112.report_service.service;
 
 import io.github.mrlevi1112.report_service.common.ReportStatus;
-import main.java.io.github.mrlevi1112.report_service.common.AssessmentSource;
+import io.github.mrlevi1112.report_service.common.AssessmentSource;
 import io.github.mrlevi1112.report_service.dto.CreateReportDTO;
 import io.github.mrlevi1112.report_service.dto.DamageAssessmentReportDTO;
 import io.github.mrlevi1112.report_service.model.DamageRegion;

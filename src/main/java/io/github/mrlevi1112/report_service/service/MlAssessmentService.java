@@ -2,10 +2,10 @@ package io.github.mrlevi1112.report_service.service;
 
 import io.github.mrlevi1112.report_service.common.Constants;
 import io.github.mrlevi1112.report_service.common.ReportStatus;
-import main.java.io.github.mrlevi1112.report_service.common.AssessmentSource;
+import io.github.mrlevi1112.report_service.common.AssessmentSource;
 import io.github.mrlevi1112.report_service.dto.MlAssessmentRequest;
 import io.github.mrlevi1112.report_service.dto.PythonAssessmentResponse;
-import main.java.io.github.mrlevi1112.report_service.exception.MlServiceUnavailableException;
+import io.github.mrlevi1112.report_service.exception.MlServiceUnavailableException;
 import io.github.mrlevi1112.report_service.model.Report;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

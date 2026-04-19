@@ -1,8 +1,10 @@
 package test.java.io.github.mrlevi1112.report_service.service;
 
-import main.java.io.github.mrlevi1112.report_service.common.AssessmentSource;
+import io.github.mrlevi1112.report_service.common.AssessmentSource;
 import io.github.mrlevi1112.report_service.dto.MlAssessmentRequest;
 import io.github.mrlevi1112.report_service.model.Report;
+import io.github.mrlevi1112.report_service.service.MlAssessmentService;
+import io.github.mrlevi1112.report_service.service.ReportService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
