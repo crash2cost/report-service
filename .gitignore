@@ -37,3 +37,6 @@ report-service.log
 .env.local
 .env.*.local
 .env.example
+
+
+nohup.out
