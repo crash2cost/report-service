@@ -22,15 +22,15 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.time.LocalDateTime;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
@@ -139,6 +139,9 @@ public class MlAssessmentService {
             filename = contentDisposition.getFilename();
         }
         final String finalFilename = filename;
+        String fileContentType = Optional.ofNullable(imageResponse.getHeaders().getContentType())
+            .map(Object::toString)
+            .orElse("image/jpeg");
 
         String mlSegment = mapCarSegment(carSegment);
         String url = UriComponentsBuilder.fromHttpUrl(mlServiceUrl + Constants.MlApi.ENDPOINT_ASSESS)
@@ -149,32 +152,42 @@ public class MlAssessmentService {
             String safeFilename = (finalFilename == null || finalFilename.isBlank()
                     ? Constants.MlApi.DEFAULT_FILENAME
                     : finalFilename).replace('"', '_');
-
             String boundary = "----Crash2CostBoundary" + System.currentTimeMillis();
-            ByteArrayOutputStream bodyStream = new ByteArrayOutputStream();
-            bodyStream.write(("--" + boundary + "\r\n").getBytes(StandardCharsets.UTF_8));
-            bodyStream.write(("Content-Disposition: form-data; name=\"" + Constants.MlApi.FIELD_FILE + "\"; filename=\"" + safeFilename + "\"\r\n").getBytes(StandardCharsets.UTF_8));
-            bodyStream.write("Content-Type: application/octet-stream\r\n\r\n".getBytes(StandardCharsets.UTF_8));
-            bodyStream.write(imageBytes);
-            bodyStream.write("\r\n".getBytes(StandardCharsets.UTF_8));
-            bodyStream.write(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
 
-            HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(Duration.ofSeconds(30))
-                    .header(HttpHeaders.CONTENT_TYPE, "multipart/form-data; boundary=" + boundary)
-                    .POST(HttpRequest.BodyPublishers.ofByteArray(bodyStream.toByteArray()))
-                    .build();
+            ByteArrayOutputStream payload = new ByteArrayOutputStream();
+            payload.write(("--" + boundary + "\r\n").getBytes(StandardCharsets.UTF_8));
+            payload.write(("Content-Disposition: form-data; name=\"" + Constants.MlApi.FIELD_FILE + "\"; filename=\"" + safeFilename + "\"\r\n").getBytes(StandardCharsets.UTF_8));
+            payload.write(("Content-Type: " + fileContentType + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
+            payload.write(imageBytes);
+            payload.write("\r\n".getBytes(StandardCharsets.UTF_8));
+            payload.write(("--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
 
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(5))
-                    .build();
+            byte[] bodyBytes = payload.toByteArray();
 
-            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new MlServiceUnavailableException("ML service returned " + response.statusCode() + ": " + response.body());
+            HttpURLConnection connection = (HttpURLConnection) URI.create(url).toURL().openConnection();
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(30000);
+            connection.setDoOutput(true);
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty(HttpHeaders.CONTENT_TYPE, "multipart/form-data; boundary=" + boundary);
+            connection.setRequestProperty(HttpHeaders.ACCEPT, "application/json");
+            connection.setFixedLengthStreamingMode(bodyBytes.length);
+
+            try (OutputStream os = connection.getOutputStream()) {
+                os.write(bodyBytes);
             }
 
-            return objectMapper.readValue(response.body(), PythonAssessmentResponse.class);
+            int status = connection.getResponseCode();
+            InputStream responseStream = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
+            String responseBody = responseStream == null
+                    ? ""
+                    : new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+
+            if (status < 200 || status >= 300) {
+                throw new MlServiceUnavailableException("ML service returned " + status + ": " + responseBody);
+            }
+
+            return objectMapper.readValue(responseBody, PythonAssessmentResponse.class);
         } catch (RestClientException e) {
             log.error("ML service call failed: {}", e.getMessage());
             throw new MlServiceUnavailableException("ML service unavailable: " + e.getMessage(), e);
