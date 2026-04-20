@@ -106,6 +106,15 @@ public class ReportService {
     }
 
     @Transactional
+    public void adminDeleteReport(String reportId) {
+        if (!reportRepository.existsById(reportId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Report not found");
+        }
+        damageRegionRepository.deleteByReportId(reportId);
+        reportRepository.deleteById(reportId);
+    }
+
+    @Transactional
     public void deleteReport(String reportId, String username) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Report not found"));

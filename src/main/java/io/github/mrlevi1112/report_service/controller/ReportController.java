@@ -85,6 +85,13 @@ public class ReportController {
         return ResponseEntity.ok(reportService.getAllDamageReports(pageable));
     }
 
+    @DeleteMapping("/admin/{reportId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> adminDeleteReport(@PathVariable String reportId) {
+        reportService.adminDeleteReport(reportId);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{reportId}")
     public ResponseEntity<Void> deleteReport(
             @AuthenticationPrincipal String username,
