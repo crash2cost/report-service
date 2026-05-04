@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 @Slf4j
@@ -57,6 +56,11 @@ public class MlAssessmentService {
             "luxury", "Luxury",
             "electric", "Executive"
     );
+
+        private static final List<String> CRITICAL_DAMAGE_KEYWORDS = List.of(
+            "shatter", "crack", "frame", "chassis", "airbag",
+            "total_loss", "totaled", "burned", "burnt", "fire", "destroyed"
+        );
 
     public Report assessDamage(String authHeader, MlAssessmentRequest request, String username) {
         if (request == null || request.getImageId() == null || request.getImageId().isBlank()) {
@@ -97,8 +101,16 @@ public class MlAssessmentService {
                 .description("Detected " + pythonResponse.getDamageType())
                 .build();
 
-        boolean totalLoss = pythonResponse.getSeverity() != null
-                && pythonResponse.getSeverity() >= Constants.DamageAssessment.TOTAL_LOSS_SEVERITY_THRESHOLD;
+        boolean severeEnough = pythonResponse.getSeverity() != null
+            && pythonResponse.getSeverity() >= Constants.DamageAssessment.TOTAL_LOSS_SEVERITY_THRESHOLD;
+
+        boolean expensiveEnough = estimatedCost != null
+            && estimatedCost >= Constants.DamageAssessment.TOTAL_LOSS_MIN_COST_ILS;
+
+        String damageType = Optional.ofNullable(pythonResponse.getDamageType()).orElse("").toLowerCase();
+        boolean criticalDamageType = CRITICAL_DAMAGE_KEYWORDS.stream().anyMatch(damageType::contains);
+
+        boolean totalLoss = severeEnough && (expensiveEnough || criticalDamageType);
 
         Report report = Report.builder()
                 .username(username)

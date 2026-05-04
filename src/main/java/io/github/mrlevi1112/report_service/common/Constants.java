@@ -7,6 +7,7 @@ public class Constants {
         private DamageAssessment() {}
 
         public static final int TOTAL_LOSS_SEVERITY_THRESHOLD = 5;
+        public static final double TOTAL_LOSS_MIN_COST_ILS = 12000.0;
         public static final String DEFAULT_CAR_SEGMENT = "Family";
     }
 
